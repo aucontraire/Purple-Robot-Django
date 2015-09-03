@@ -1,0 +1,108 @@
+{% load static from staticfiles %}
+<div id="weather_chart" style="border: 1px solid #808080; height: 180px; width: 100%; overflow: hidden;">
+	<script>
+		$(document).ready(function () {
+			$('[data-toggle="tooltip"]').tooltip();
+			var data, graph, i, max, min, point, scales, series, _i, _j, _k, _l, _len, _len1, _len2, _ref;
+			
+			{% autoescape off %}
+			    var temp_data = {{ temp_report }};
+			    var pressure_data = {{ pressure_report }};
+	    	{% endautoescape %}
+	    	
+	    	temp_data.sort(function (a, b) {
+		        return parseFloat(a.x) - parseFloat(b.x);
+		    });
+	    	
+	    	pressure_data.sort(function (a, b) {
+		        return parseFloat(a.x) - parseFloat(b.x);
+		    });
+	    	
+			data = [[],[]];
+			data[0] = temp_data;
+			data[1] = pressure_data;
+		
+			scales = [];
+		
+			_ref = data[1];
+			for (_j = 0, _len = _ref.length; _j < _len; _j++) {
+			    point = _ref[_j];			    
+			}			
+			
+			for (_k = 0, _len1 = data.length; _k < _len1; _k++) {
+			    series = data[_k];
+			    min = Number.MAX_VALUE;
+			    max = Number.MIN_VALUE;
+			    for (_l = 0, _len2 = series.length; _l < _len2; _l++) {
+			        point = series[_l];
+			        min = Math.min(min, point.y);
+			        max = Math.max(max, point.y);
+			    }
+			    if (_k === 0) {			        
+			        scales.push(d3.scale.linear().domain([0, max]).nice());
+			    } else {			        
+			        scales.push(d3.scale.pow().domain([min, max]).nice());
+			    }
+			}
+		
+			graph = new Rickshaw.Graph({
+			    element: document.getElementById("weather_chart"),
+			    renderer: 'line',
+			    interpolation: "linear",
+			    width: $("div#weather_chart").width(),
+			    series: [{
+			        color: 'steelblue',
+			        data: data[0],
+			        name: 'temperature',
+			        scale: scales[0]
+			    }, {
+			        color: 'lightblue',
+			        data: data[1],
+			        name: 'pressure',
+			        scale: scales[1]
+			    }],
+				padding: {
+	            	top: 0.25,
+	            	bottom: 0.25
+	        	}
+			});
+			
+			var timeUnit = {
+				'name': '1 week', 
+				'seconds': 3600 * 24 * 3, 
+				'formatter': function(d)
+				{ 					
+					return moment(d).format('M/D/YY');
+				}
+			};
+			
+			new Rickshaw.Graph.Axis.Y.Scaled({
+			    graph: graph,
+			    ticks: 7,
+			    scale: scales[0],
+			    tickFormat: Rickshaw.Fixtures.Number.formatKMBT
+			});
+		
+			new Rickshaw.Graph.Axis.Y.Scaled({			    
+			    graph: graph,
+			    ticks: 5,
+			    grid: false,
+			    orientation: 'left',
+			    scale: scales[1],
+			    tickFormat: Rickshaw.Fixtures.Number.formatKMBT
+			});
+		
+			new Rickshaw.Graph.Axis.Time({
+			    graph: graph,
+			    timeUnit: timeUnit
+			});
+		
+			new Rickshaw.Graph.HoverDetail({
+			    graph: graph,
+			    yFormatter: function(y) { return Math.floor(y) }
+			});
+		
+			graph.render();
+		});
+	</script>
+</div>
